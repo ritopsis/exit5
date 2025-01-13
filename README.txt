@@ -1,3 +1,3 @@
-1) Install three.js
-# three.js
-npm install --save three
+$ npm install --save three
+$ npm install --save-dev vite
+$ npx vite
