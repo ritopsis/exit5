@@ -3,6 +3,22 @@ import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { PointerLockControls } from "./node_modules/three/examples/jsm/controls/PointerLockControls.js";
 
+// Erzeuge ein <div>-Element
+const hud = document.createElement('div');
+
+// Style das <div> direkt per JavaScript (ähnlich wie in CSS)
+hud.style.position = 'fixed';
+hud.style.top = '10px';
+hud.style.left = '10px';
+hud.style.padding = '5px 10px';
+hud.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+hud.style.color = '#fff';
+hud.style.fontFamily = 'sans-serif';
+hud.style.zIndex = '9999';
+
+
+// Füge das <div> ins <body> ein
+document.body.appendChild(hud);
 
 let camera, scene, renderer;
 let controls;
@@ -16,8 +32,12 @@ let objects = [];
 let cameraCollider;
 let cameraBoundingBox;
 let objectsBoundingBoxes = [];
-let currentLevel = 0; // Der Spieler beginnt bei Level 1
+let level = 0; // Der Spieler beginnt bei Level 1
+let currentlevel = 5; // Der Spieler beginnt bei Level 5 Stockwerke hochgehen
 
+
+// Initialer Text
+hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
 const levels = [
   {
     name: "Level 1",
@@ -216,7 +236,7 @@ collidableObjects.forEach((name) => {
   document.addEventListener("keyup", onKeyUp);
   window.addEventListener("resize", onWindowResize);
 
-  setLevel(currentLevel);
+  setLevel(level);
 }
 
 function onWindowResize() {
@@ -267,30 +287,49 @@ function animate() {
         break;
       }
     }
-
     if (collision) {
       // Kollision erkannt, Bewegung rückgängig machen
       camera.position.copy(prevPosition);
       cameraCollider.position.copy(prevPosition);
       velocity.set(0, 0, 0);
     }
+    const random = Math.floor(Math.random() * (2 - 0 + 1)) + 0;
     if (collision) {
-      if (collidedObjectName === levels[currentLevel].target) {
-        console.log(`Ziel erreicht: ${collidedObjectName}`);
-        
-        // Zum nächsten Level wechseln
-        currentLevel++;
-        if (currentLevel < levels.length) {
-          setLevel(currentLevel);
+      console.log(collidedObjectName);
+      if(collidedObjectName === "green" || collidedObjectName === "red")
+      {
+        if (collidedObjectName === levels[level].target) {
+          console.log("LEVEL:" + currentlevel);
+  
+          console.log(`Ziel erreicht: ${collidedObjectName}`);
+          
+          // Zum nächsten Level wechseln
+          console.log("Anzahl der Level:", levels.length);
+
+
+          
+          if (currentlevel == 0 ) {
+            console.log("Herzlichen Glückwunsch! Du hast alle Levels abgeschlossen.");
+          } else {
+            currentlevel--;
+            hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
+          }
+          level = random;
+          setLevel(level);
         } else {
-          console.log("Herzlichen Glückwunsch! Du hast alle Levels abgeschlossen.");
+          currentlevel = 5; 
+          hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
+          level = random;
+          setLevel(level);
         }
-      } else {
-        console.log(`Falscher Ziel-Collider: ${collidedObjectName}`);
+      }
+      else
+      {
+        console.log(collidedObjectName);
       }
     }
     // Aktuelle Kamera-Koordinaten ausgeben
-    console.log(`Kamera Position: x=${camera.position.x}, y=${camera.position.y}, z=${camera.position.z}`);
+    //console.log(`Kamera Position: x=${camera.position.x}, y=${camera.position.y}, z=${camera.position.z}`);
   }
 
   renderer.render(scene, camera);
@@ -308,6 +347,7 @@ function setLevel(levelIndex) {
     level.cameraStartPosition.y,
     level.cameraStartPosition.z
   );
+  camera.lookAt(0, 1.5, 0);
 
   // Ausgabe in der Konsole
   console.log(`Starte ${level.name}, Ziel: ${level.target}`);
