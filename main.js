@@ -29,6 +29,8 @@ let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
+let rotateLeft = false;
+let rotateRight = false;
 let velocity = new THREE.Vector3();
 let direction = new THREE.Vector3();
 let objects = [];
@@ -37,6 +39,8 @@ let cameraBoundingBox;
 let objectsBoundingBoxes = [];
 let level = 0; // Der Spieler beginnt bei Level 1
 let currentlevel = 5; // Der Spieler beginnt bei Level 5 Stockwerke hochgehen
+let cameraRig; // Dummy-Rig für die Kamera
+
 
 
 // Initialer Text
@@ -67,13 +71,14 @@ function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87ceeb);
 
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.set(-2.123642090273303, 1.4999999999999947, -94.61898176376722);
+  cameraRig = new THREE.Group();
+camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+cameraRig.add(camera);
+scene.add(cameraRig);
+
+// Setze die Startposition für das Rig
+cameraRig.position.set(-2.123642090273303, 1.5, -94.61898176376722);
+
   camera.lookAt(0, 1.5, 0);
 
   renderer = new THREE.WebGLRenderer();
@@ -112,7 +117,7 @@ collidableObjects.forEach((name) => {
         objectsBoundingBoxes.push(boundingBox);
         objects.push(object); // Objekt zur Liste hinzufügen
     } else {
-        console.warn(`Das Objekt '${name}' wurde im GLTF-Modell nicht gefunden.`);
+        console.warn("Das Objekt '${name}' wurde im GLTF-Modell nicht gefunden.");
     }
 });
     },
@@ -177,7 +182,7 @@ collidableObjects.forEach((name) => {
 
 
   // PointerLockControls für die First-Person-Steuerung
-  controls = new PointerLockControls(camera, document.body);
+  /* controls = new PointerLockControls(camera, document.body);
 
   document.addEventListener("click", function () {
     controls.lock();
@@ -191,7 +196,7 @@ collidableObjects.forEach((name) => {
     console.log("Pointer unlocked");
   });
 
-  scene.add(controls.getObject());
+  scene.add(controls.getObject()); */
 
   // Kamera-Collider erstellen
   const cameraGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -206,7 +211,34 @@ collidableObjects.forEach((name) => {
   scene.add(controller1);
   scene.add(controller2);
 
+// Event-Listener für Controller
+controller1.addEventListener("selectstart", () => {
+  moveForward = true;
+});
+controller1.addEventListener("selectend", () => {
+  moveForward = false;
+});
 
+controller1.addEventListener("squeezestart", () => {
+  moveBackward = true;
+});
+controller1.addEventListener("squeezeend", () => {
+  moveBackward = false;
+});
+
+controller2.addEventListener("selectstart", () => {
+  rotateRight = true;
+});
+controller2.addEventListener("selectend", () => {
+  rotateRight = false;
+});
+
+controller2.addEventListener("squeezestart", () => {
+  rotateLeft = true;
+});
+controller2.addEventListener("squeezeend", () => {
+  rotateLeft = false;
+});
 
 
   // Kamera-BoundingBox initialisieren
@@ -217,15 +249,19 @@ collidableObjects.forEach((name) => {
     switch (event.code) {
       case "KeyW":
         moveForward = true;
+        console.log("w gedrückt");        
         break;
       case "KeyA":
         moveLeft = true;
+        console.log("a gedrückt");
         break;
       case "KeyS":
         moveBackward = true;
+        console.log("s gedrückt");
         break;
       case "KeyD":
         moveRight = true;
+        console.log("d gedrückt");
         break;
     }
   };
@@ -264,63 +300,60 @@ function onWindowResize() {
 }
 
 function animate() {
-  // requestAnimationFrame(animate);
-  renderer.setAnimationLoop(function() {
-    
-    if (controls.isLocked === true) {
-      const delta = 0.05;
-      
-      velocity.x -= velocity.x * 10.0 * delta;
-      velocity.z -= velocity.z * 10.0 * delta;
-  
-      direction.z = Number(moveForward) - Number(moveBackward);
-      direction.x = Number(moveRight) - Number(moveLeft);
-      direction.normalize();
-  
-      if (moveForward || moveBackward)
-        velocity.z -= direction.z * 100.0 * delta;
-      if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
-  
-      // Vorherige Position speichern
-      const prevPosition = camera.position.clone();
-  
-      // Kamera bewegen
-      controls.moveRight(-velocity.x * delta);
-      controls.moveForward(-velocity.z * delta);
-  
-      // Kamera-Collider-Position aktualisieren
-      cameraCollider.position.copy(camera.position);
-      cameraCollider.updateMatrixWorld();
-  
-      // Kamera-BoundingBox aktualisieren
-      cameraBoundingBox.setFromObject(cameraCollider);
-  
-      // Kollisionsprüfung
-      let collision = false;
-      let collidedObjectName = null; // Variable für den Namen des kollidierten Objekts
-      
-      for (let i = 0; i < objectsBoundingBoxes.length; i++) {
-        if (cameraBoundingBox.intersectsBox(objectsBoundingBoxes[i])) {
-          collision = true;
-          collidedObjectName = objects[i].name; // Den Namen des kollidierten Objekts speichern
-          break;
-        }
+  renderer.setAnimationLoop(() => {
+    const movementSpeed = 0.1;
+    const rotationSpeed = 0.008;
+
+    // Bewegung
+    if (moveForward) {
+      const forward = new THREE.Vector3(0, 0, -1);
+      forward.applyQuaternion(cameraRig.quaternion);
+      cameraRig.position.addScaledVector(forward, movementSpeed);
+    }
+    if (moveBackward) {
+      const backward = new THREE.Vector3(0, 0, 1);
+      backward.applyQuaternion(cameraRig.quaternion);
+      cameraRig.position.addScaledVector(backward, movementSpeed);
+    }
+
+    // Rotation
+    if (rotateRight) {
+      cameraRig.rotation.y -= rotationSpeed;
+    }
+    if (rotateLeft) {
+      cameraRig.rotation.y += rotationSpeed;
+    }
+
+    // Collider aktualisieren
+    cameraCollider.position.copy(cameraRig.position);
+    cameraBoundingBox.setFromObject(cameraCollider);
+
+    // BoundingBox-Objekte aktualisieren
+    objects.forEach((object, index) => {
+      objectsBoundingBoxes[index].setFromObject(object);
+    });
+
+    // Kollisionsprüfung
+    let collision = false;
+    let collidedObjectName = null;
+    for (let i = 0; i < objectsBoundingBoxes.length; i++) {
+      if (cameraBoundingBox.intersectsBox(objectsBoundingBoxes[i])) {
+        collision = true;
+        collidedObjectName = objects[i].name;
+        break;
       }
-      if (collision) {
-        // Kollision erkannt, Bewegung rückgängig machen
-        camera.position.copy(prevPosition);
-        cameraCollider.position.copy(prevPosition);
-        velocity.set(0, 0, 0);
-      }
-      const random = Math.floor(Math.random() * (2 - 0 + 1)) + 0;
-      if (collision) {
-        console.log(collidedObjectName);
-        if(collidedObjectName === "green" || collidedObjectName === "red")
+    }
+
+    const random = Math.floor(Math.random() * 3);
+    if (collision) {
+      console.log(`Kollision erkannt mit: ${collidedObjectName}`);
+      hud.textContent = `Kollision mit: ${collidedObjectName}`;
+      if(collidedObjectName === "green" || collidedObjectName === "red")
         {
           if (collidedObjectName === levels[level].target) {
             console.log("LEVEL:" + currentlevel);
     
-            console.log(`Ziel erreicht: ${collidedObjectName}`);
+            console.log(`Ziel erreicht:  ${collidedObjectName}`);
             
             // Zum nächsten Level wechseln
             console.log("Anzahl der Level:", levels.length);
@@ -346,21 +379,13 @@ function animate() {
         {
           console.log(collidedObjectName);
         }
-      }
 
-      // updateControllers(); // Update controllers for movement
-
-      // Aktuelle Kamera-Koordinaten ausgeben
-      //console.log(`Kamera Position: x=${camera.position.x}, y=${camera.position.y}, z=${camera.position.z}`);
     }
-    
 
-  
-    renderer.render(scene, camera)
-  })
-
-  
+    renderer.render(scene, camera);
+  });
 }
+
 
 
 
@@ -371,14 +396,13 @@ function setLevel(levelIndex) {
     return;
   }
 
-  // Kamera-Position aktualisieren
-  camera.position.set(
+  // KameraRig-Position aktualisieren
+  cameraRig.position.set(
     level.cameraStartPosition.x,
     level.cameraStartPosition.y,
     level.cameraStartPosition.z
   );
-  camera.lookAt(0, 1.5, 0);
 
-  // Ausgabe in der Konsole
   console.log(`Starte ${level.name}, Ziel: ${level.target}`);
 }
+
