@@ -2,6 +2,9 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { PointerLockControls } from "./node_modules/three/examples/jsm/controls/PointerLockControls.js";
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+
+
 
 // Erzeuge ein <div>-Element
 const hud = document.createElement('div');
@@ -74,8 +77,11 @@ function init() {
   camera.lookAt(0, 1.5, 0);
 
   renderer = new THREE.WebGLRenderer();
+  
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
+  document.body.appendChild(VRButton.createButton(renderer));
+  renderer.xr.enabled = true
 
   // Licht hinzufügen
   const light = new THREE.HemisphereLight(0xffffff, 0x444444);
@@ -194,6 +200,15 @@ collidableObjects.forEach((name) => {
   cameraCollider.position.copy(camera.position);
   scene.add(cameraCollider);
 
+  // Kontroller einbinden
+  const controller1 = renderer.xr.getController(0);
+  const controller2 = renderer.xr.getController(1);
+  scene.add(controller1);
+  scene.add(controller2);
+
+
+
+
   // Kamera-BoundingBox initialisieren
   cameraBoundingBox = new THREE.Box3();
 
@@ -239,6 +254,9 @@ collidableObjects.forEach((name) => {
   setLevel(level);
 }
 
+
+
+
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -246,94 +264,106 @@ function onWindowResize() {
 }
 
 function animate() {
-  requestAnimationFrame(animate);
-
-  if (controls.isLocked === true) {
-    const delta = 0.05;
-
-    velocity.x -= velocity.x * 10.0 * delta;
-    velocity.z -= velocity.z * 10.0 * delta;
-
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
-    direction.normalize();
-
-    if (moveForward || moveBackward)
-      velocity.z -= direction.z * 100.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
-
-    // Vorherige Position speichern
-    const prevPosition = camera.position.clone();
-
-    // Kamera bewegen
-    controls.moveRight(-velocity.x * delta);
-    controls.moveForward(-velocity.z * delta);
-
-    // Kamera-Collider-Position aktualisieren
-    cameraCollider.position.copy(camera.position);
-    cameraCollider.updateMatrixWorld();
-
-    // Kamera-BoundingBox aktualisieren
-    cameraBoundingBox.setFromObject(cameraCollider);
-
-    // Kollisionsprüfung
-    let collision = false;
-    let collidedObjectName = null; // Variable für den Namen des kollidierten Objekts
+  // requestAnimationFrame(animate);
+  renderer.setAnimationLoop(function() {
     
-    for (let i = 0; i < objectsBoundingBoxes.length; i++) {
-      if (cameraBoundingBox.intersectsBox(objectsBoundingBoxes[i])) {
-        collision = true;
-        collidedObjectName = objects[i].name; // Den Namen des kollidierten Objekts speichern
-        break;
-      }
-    }
-    if (collision) {
-      // Kollision erkannt, Bewegung rückgängig machen
-      camera.position.copy(prevPosition);
-      cameraCollider.position.copy(prevPosition);
-      velocity.set(0, 0, 0);
-    }
-    const random = Math.floor(Math.random() * (2 - 0 + 1)) + 0;
-    if (collision) {
-      console.log(collidedObjectName);
-      if(collidedObjectName === "green" || collidedObjectName === "red")
-      {
-        if (collidedObjectName === levels[level].target) {
-          console.log("LEVEL:" + currentlevel);
+    if (controls.isLocked === true) {
+      const delta = 0.05;
+      
+      velocity.x -= velocity.x * 10.0 * delta;
+      velocity.z -= velocity.z * 10.0 * delta;
   
-          console.log(`Ziel erreicht: ${collidedObjectName}`);
-          
-          // Zum nächsten Level wechseln
-          console.log("Anzahl der Level:", levels.length);
-
-
-          
-          if (currentlevel == 0 ) {
-            console.log("Herzlichen Glückwunsch! Du hast alle Levels abgeschlossen.");
-          } else {
-            currentlevel--;
-            hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
-          }
-          level = random;
-          setLevel(level);
-        } else {
-          currentlevel = 5; 
-          hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
-          level = random;
-          setLevel(level);
+      direction.z = Number(moveForward) - Number(moveBackward);
+      direction.x = Number(moveRight) - Number(moveLeft);
+      direction.normalize();
+  
+      if (moveForward || moveBackward)
+        velocity.z -= direction.z * 100.0 * delta;
+      if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
+  
+      // Vorherige Position speichern
+      const prevPosition = camera.position.clone();
+  
+      // Kamera bewegen
+      controls.moveRight(-velocity.x * delta);
+      controls.moveForward(-velocity.z * delta);
+  
+      // Kamera-Collider-Position aktualisieren
+      cameraCollider.position.copy(camera.position);
+      cameraCollider.updateMatrixWorld();
+  
+      // Kamera-BoundingBox aktualisieren
+      cameraBoundingBox.setFromObject(cameraCollider);
+  
+      // Kollisionsprüfung
+      let collision = false;
+      let collidedObjectName = null; // Variable für den Namen des kollidierten Objekts
+      
+      for (let i = 0; i < objectsBoundingBoxes.length; i++) {
+        if (cameraBoundingBox.intersectsBox(objectsBoundingBoxes[i])) {
+          collision = true;
+          collidedObjectName = objects[i].name; // Den Namen des kollidierten Objekts speichern
+          break;
         }
       }
-      else
-      {
-        console.log(collidedObjectName);
+      if (collision) {
+        // Kollision erkannt, Bewegung rückgängig machen
+        camera.position.copy(prevPosition);
+        cameraCollider.position.copy(prevPosition);
+        velocity.set(0, 0, 0);
       }
-    }
-    // Aktuelle Kamera-Koordinaten ausgeben
-    //console.log(`Kamera Position: x=${camera.position.x}, y=${camera.position.y}, z=${camera.position.z}`);
-  }
+      const random = Math.floor(Math.random() * (2 - 0 + 1)) + 0;
+      if (collision) {
+        console.log(collidedObjectName);
+        if(collidedObjectName === "green" || collidedObjectName === "red")
+        {
+          if (collidedObjectName === levels[level].target) {
+            console.log("LEVEL:" + currentlevel);
+    
+            console.log(`Ziel erreicht: ${collidedObjectName}`);
+            
+            // Zum nächsten Level wechseln
+            console.log("Anzahl der Level:", levels.length);
+  
+  
+            
+            if (currentlevel == 0 ) {
+              console.log("Herzlichen Glückwunsch! Du hast alle Levels abgeschlossen.");
+            } else {
+              currentlevel--;
+              hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
+            }
+            level = random;
+            setLevel(level);
+          } else {
+            currentlevel = 5; 
+            hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
+            level = random;
+            setLevel(level);
+          }
+        }
+        else
+        {
+          console.log(collidedObjectName);
+        }
+      }
 
-  renderer.render(scene, camera);
+      // updateControllers(); // Update controllers for movement
+
+      // Aktuelle Kamera-Koordinaten ausgeben
+      //console.log(`Kamera Position: x=${camera.position.x}, y=${camera.position.y}, z=${camera.position.z}`);
+    }
+    
+
+  
+    renderer.render(scene, camera)
+  })
+
+  
 }
+
+
+
 function setLevel(levelIndex) {
   const level = levels[levelIndex];
   if (!level) {
