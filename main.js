@@ -1,7 +1,6 @@
 //Importiere notwendige Three.js Module
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
 let camera, scene, renderer;
@@ -186,11 +185,7 @@ function init() {
       exitPlane.visible = false;
     });
     
-    const loader = new GLTFLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('./node_modules/three/examples/js/libs/draco/');
-    loader.setDRACOLoader(dracoLoader);
-  // GLTF Loader zum Laden des GLB-Modells
+  const loader = new GLTFLoader();
   loader.load(
     "Level_1.glb",
     function (gltf) {
@@ -198,7 +193,7 @@ function init() {
       scene.add(gltf.scene);
       gltf.scene.updateMatrixWorld(true);
       // Liste der gewünschten Objektnamen
-const collidableObjects = []; //"green","red", "wall1", "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10", "plant1", "plant2", "plant3", "plant4", "plant6", "plant5"
+const collidableObjects = ["green","red", "wall1", "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10", "plant1", "plant2", "plant3", "plant4", "plant6", "plant5"]; //"green","red", "wall1", "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10", "plant1", "plant2", "plant3", "plant4", "plant6", "plant5"
 
 // Für jedes Objekt in der Liste einen Collider erstellen
 collidableObjects.forEach((name) => {
@@ -225,7 +220,6 @@ collidableObjects.forEach((name) => {
 
   // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader2 = new GLTFLoader();
-  loader2.setDRACOLoader(dracoLoader);
   loader2.load("Level_2.glb", (gltf) => {
     gltf.scene.position.set(50, 0, 0);
     scene.add(gltf.scene);
@@ -251,7 +245,6 @@ collidableObjects.forEach((name) => {
 
   // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader3 = new GLTFLoader();
-  loader3.setDRACOLoader(dracoLoader);
   loader3.load("Level_3.glb", (gltf) => {
     gltf.scene.position.set(100, 0, 0);
     scene.add(gltf.scene);
@@ -277,7 +270,6 @@ collidableObjects.forEach((name) => {
 
     // GLTF Loader zum Laden des zweiten GLB-Modells
     const loader4 = new GLTFLoader();
-    loader4.setDRACOLoader(dracoLoader);
     loader4.load("Level_4.glb", (gltf) => {
       gltf.scene.position.set(150, 0, 0);
       scene.add(gltf.scene);
@@ -303,7 +295,6 @@ collidableObjects.forEach((name) => {
 
       // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader5 = new GLTFLoader();
-  loader5.setDRACOLoader(dracoLoader);
   loader5.load("Level_5.glb", (gltf) => {
     gltf.scene.position.set(200, 0, 0);
     scene.add(gltf.scene);
@@ -329,7 +320,6 @@ collidableObjects.forEach((name) => {
 
     // GLTF Loader zum Laden des zweiten GLB-Modells
     const loader6 = new GLTFLoader();
-    loader6.setDRACOLoader(dracoLoader);
     loader6.load("Level_6.glb", (gltf) => {
       gltf.scene.position.set(250, 0, 0);
       scene.add(gltf.scene);
@@ -355,7 +345,6 @@ collidableObjects.forEach((name) => {
 
       // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader7 = new GLTFLoader();
-  loader7.setDRACOLoader(dracoLoader);
   loader7.load("Level_7.glb", (gltf) => {
     gltf.scene.position.set(300, 0, 0);
     scene.add(gltf.scene);
@@ -381,7 +370,6 @@ collidableObjects.forEach((name) => {
 
     // GLTF Loader zum Laden des zweiten GLB-Modells
     const loader8 = new GLTFLoader();
-    loader8.setDRACOLoader(dracoLoader);
     loader8.load("Level_8.glb", (gltf) => {
       gltf.scene.position.set(350, 0, 0);
       scene.add(gltf.scene);
@@ -407,7 +395,6 @@ collidableObjects.forEach((name) => {
 
       // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader9 = new GLTFLoader();
-  loader9.setDRACOLoader(dracoLoader);
   loader9.load("Ende.glb", (gltf) => {
     gltf.scene.position.set(400, 0, 0);
     scene.add(gltf.scene);
