@@ -18,6 +18,7 @@ let currentlevel = 5; // Der Spieler beginnt bei Level 5 Stockwerke hochgehen
 let cameraRig; // Dummy-Rig für die Kamera
 let notizPlane;
 let exitPlane;
+const collidableObjects = ["green","red", "wall1", "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10", "plant1", "plant2", "plant3", "plant4", "plant6", "plant5"]; //
 
 
 // Initialer Text
@@ -39,32 +40,32 @@ const levels = [
   },
   {
     name: "Level 4",
-    cameraStartPosition: { x: 97.38687727522415, y: 1.4999999999999947, z: -94.61898176376722 },
+    cameraStartPosition: { x: 149.06754600849737, y: 1.4999999999999947, z: -94.61898176376722 },
     target: "green"
   },
   {
     name: "Level 5",
-    cameraStartPosition: { x: 97.38687727522415, y: 1.4999999999999947, z: -94.61898176376722 },
+    cameraStartPosition: { x: 198.049266531608, y: 1.4999999999999947, z: -94.61898176376722 },
     target: "green"
   },
   {
     name: "Level 6",
-    cameraStartPosition: { x: 97.38687727522415, y: 1.4999999999999947, z: -94.61898176376722 },
+    cameraStartPosition: { x: 249.86914054490398, y: 1.4999999999999947, z: -94.61898176376722 },
     target: "green"
   },
   {
     name: "Level 7",
-    cameraStartPosition: { x: 97.38687727522415, y: 1.4999999999999947, z: -94.61898176376722 },
+    cameraStartPosition: { x: 298.4954987420951, y: 1.4999999999999947, z: -94.61898176376722 },
     target: "green"
   },
   {
     name: "Level 8",
-    cameraStartPosition: { x: 97.38687727522415, y: 1.4999999999999947, z: -94.61898176376722 },
+    cameraStartPosition: { x: 349.9862610501403, y: 1.4999999999999947, z: -94.61898176376722 },
     target: "green"
   },
   {
     name: "Ende",
-    cameraStartPosition: { x: 97.38687727522415, y: 1.4999999999999947, z: -94.61898176376722 },
+    cameraStartPosition: { x: 397.2321985350387, y: 1.4999999999999947, z: -3.720939402831313 },
     target: "green"
   }
 ];
@@ -187,14 +188,12 @@ function init() {
     
   const loader = new GLTFLoader();
   loader.load(
-    "Level_1.glb",
+    "Level_1_comp.glb",
     function (gltf) {
       gltf.scene.position.set(0, 0, 0);
       scene.add(gltf.scene);
       gltf.scene.updateMatrixWorld(true);
       // Liste der gewünschten Objektnamen
-const collidableObjects = ["green","red", "wall1", "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10", "plant1", "plant2", "plant3", "plant4", "plant6", "plant5"]; //"green","red", "wall1", "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10", "plant1", "plant2", "plant3", "plant4", "plant6", "plant5"
-
 // Für jedes Objekt in der Liste einen Collider erstellen
 collidableObjects.forEach((name) => {
     const object = gltf.scene.getObjectByName(name);
@@ -203,7 +202,7 @@ collidableObjects.forEach((name) => {
         // BoundingBox für das Objekt erstellen
         const boundingBox = new THREE.Box3().setFromObject(object);
         objectsBoundingBoxes.push(boundingBox);
-        objects.push(object); // Objekt zur Liste hinzufügen
+        objects.push(object); 
     } else {
         console.warn("Das Objekt '${name}' wurde im GLTF-Modell nicht gefunden.");
     }
@@ -220,23 +219,16 @@ collidableObjects.forEach((name) => {
 
   // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader2 = new GLTFLoader();
-  loader2.load("Level_2.glb", (gltf) => {
+  loader2.load("Level_2_comp.glb", (gltf) => {
     gltf.scene.position.set(50, 0, 0);
     scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
-  
-    // Liste aller gesuchten Objekt-Namen
-    const collidableObjects = ["red", "green", ""];
-  
     collidableObjects.forEach((name) => {
       const object = gltf.scene.getObjectByName(name);
       if (object) {
         object.updateMatrixWorld(true);
         
         const boundingBox = new THREE.Box3().setFromObject(object);
-        const helper = new THREE.Box3Helper(boundingBox, 0xff0000);
-        scene.add(helper);
-  
         objectsBoundingBoxes.push(boundingBox);
         objects.push(object);
       }
@@ -249,19 +241,12 @@ collidableObjects.forEach((name) => {
     gltf.scene.position.set(100, 0, 0);
     scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
-  
-    // Liste aller gesuchten Objekt-Namen
-    const collidableObjects = ["red", "green", ""];
-  
     collidableObjects.forEach((name) => {
       const object = gltf.scene.getObjectByName(name);
       if (object) {
         object.updateMatrixWorld(true);
         
         const boundingBox = new THREE.Box3().setFromObject(object);
-        const helper = new THREE.Box3Helper(boundingBox, 0xff0000);
-        scene.add(helper);
-  
         objectsBoundingBoxes.push(boundingBox);
         objects.push(object);
       }
@@ -274,19 +259,12 @@ collidableObjects.forEach((name) => {
       gltf.scene.position.set(150, 0, 0);
       scene.add(gltf.scene);
       gltf.scene.updateMatrixWorld(true);
-    
-      // Liste aller gesuchten Objekt-Namen
-      const collidableObjects = ["red", "green", ""];
-    
       collidableObjects.forEach((name) => {
         const object = gltf.scene.getObjectByName(name);
         if (object) {
           object.updateMatrixWorld(true);
           
           const boundingBox = new THREE.Box3().setFromObject(object);
-          const helper = new THREE.Box3Helper(boundingBox, 0xff0000);
-          scene.add(helper);
-    
           objectsBoundingBoxes.push(boundingBox);
           objects.push(object);
         }
@@ -299,19 +277,12 @@ collidableObjects.forEach((name) => {
     gltf.scene.position.set(200, 0, 0);
     scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
-  
-    // Liste aller gesuchten Objekt-Namen
-    const collidableObjects = ["red", "green", ""];
-  
     collidableObjects.forEach((name) => {
       const object = gltf.scene.getObjectByName(name);
       if (object) {
         object.updateMatrixWorld(true);
         
         const boundingBox = new THREE.Box3().setFromObject(object);
-        const helper = new THREE.Box3Helper(boundingBox, 0xff0000);
-        scene.add(helper);
-  
         objectsBoundingBoxes.push(boundingBox);
         objects.push(object);
       }
@@ -324,19 +295,12 @@ collidableObjects.forEach((name) => {
       gltf.scene.position.set(250, 0, 0);
       scene.add(gltf.scene);
       gltf.scene.updateMatrixWorld(true);
-    
-      // Liste aller gesuchten Objekt-Namen
-      const collidableObjects = ["red", "green", ""];
-    
       collidableObjects.forEach((name) => {
         const object = gltf.scene.getObjectByName(name);
         if (object) {
           object.updateMatrixWorld(true);
           
           const boundingBox = new THREE.Box3().setFromObject(object);
-          const helper = new THREE.Box3Helper(boundingBox, 0xff0000);
-          scene.add(helper);
-    
           objectsBoundingBoxes.push(boundingBox);
           objects.push(object);
         }
@@ -349,19 +313,12 @@ collidableObjects.forEach((name) => {
     gltf.scene.position.set(300, 0, 0);
     scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
-  
-    // Liste aller gesuchten Objekt-Namen
-    const collidableObjects = ["red", "green", ""];
-  
     collidableObjects.forEach((name) => {
       const object = gltf.scene.getObjectByName(name);
       if (object) {
         object.updateMatrixWorld(true);
         
         const boundingBox = new THREE.Box3().setFromObject(object);
-        const helper = new THREE.Box3Helper(boundingBox, 0xff0000);
-        scene.add(helper);
-  
         objectsBoundingBoxes.push(boundingBox);
         objects.push(object);
       }
@@ -370,23 +327,16 @@ collidableObjects.forEach((name) => {
 
     // GLTF Loader zum Laden des zweiten GLB-Modells
     const loader8 = new GLTFLoader();
-    loader8.load("Level_8.glb", (gltf) => {
+    loader8.load("Level_8_comp.glb", (gltf) => {
       gltf.scene.position.set(350, 0, 0);
       scene.add(gltf.scene);
       gltf.scene.updateMatrixWorld(true);
-    
-      // Liste aller gesuchten Objekt-Namen
-      const collidableObjects = ["red", "green", ""];
-    
       collidableObjects.forEach((name) => {
         const object = gltf.scene.getObjectByName(name);
         if (object) {
           object.updateMatrixWorld(true);
           
           const boundingBox = new THREE.Box3().setFromObject(object);
-          const helper = new THREE.Box3Helper(boundingBox, 0xff0000);
-          scene.add(helper);
-    
           objectsBoundingBoxes.push(boundingBox);
           objects.push(object);
         }
@@ -401,17 +351,14 @@ collidableObjects.forEach((name) => {
     gltf.scene.updateMatrixWorld(true);
   
     // Liste aller gesuchten Objekt-Namen
-    const collidableObjects = []; //"wall1", "wall2", "wall3","wall4"
+    const collidableObjects2 = ["wall1", "wall2", "wall3","wall4"]; 
   
-    collidableObjects.forEach((name) => {
+    collidableObjects2.forEach((name) => {
       const object = gltf.scene.getObjectByName(name);
       if (object) {
         object.updateMatrixWorld(true);
         
         const boundingBox = new THREE.Box3().setFromObject(object);
-        const helper = new THREE.Box3Helper(boundingBox, 0xff0000);
-        scene.add(helper);
-  
         objectsBoundingBoxes.push(boundingBox);
         objects.push(object);
       }
@@ -466,64 +413,7 @@ controller2.addEventListener("squeezestart", () => {
 controller2.addEventListener("squeezeend", () => {
   rotateLeft = false;
 });
-
-
-  // Kamera-BoundingBox initialisieren
-  cameraBoundingBox = new THREE.Box3();
-/*
-  // EventListener für Tastatursteuerung
-  const onKeyDown = function (event) {
-    switch (event.code) {
-      case "KeyW":
-        moveForward = true;
-        console.log("w gedrückt");        
-        break;
-      case "KeyA":
-        moveLeft = true;
-        console.log("a gedrückt");
-        break;
-      case "KeyS":
-        moveBackward = true;
-        console.log("s gedrückt");
-        break;
-      case "KeyD":
-        moveRight = true;
-        console.log("d gedrückt");
-        break;
-    }
-  };
-
-  const onKeyUp = function (event) {
-    switch (event.code) {
-      case "KeyW":
-        moveForward = false;
-        break;
-      case "KeyA":
-        moveLeft = false;
-        break;
-      case "KeyS":
-        moveBackward = false;
-        break;
-      case "KeyD":
-        moveRight = false;
-        break;
-    }
-  };
-
-  document.addEventListener("keydown", onKeyDown);
-  document.addEventListener("keyup", onKeyUp);
-  window.addEventListener("resize", onWindowResize);
-*/
   setLevel(level);
-}
-
-
-
-
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function animate() {
@@ -581,7 +471,7 @@ function animate() {
       // Optionally, handle your level logic if the collided object is "green" or "red"
       // ...
     }
-    const random = Math.floor(Math.random() * 7);
+    const random = Math.floor(Math.random() * 8);
     if (collision) {
       console.log(`Kollision erkannt mit: ${collidedObjectName}`);
       if(collidedObjectName === "green" || collidedObjectName === "red")
@@ -593,9 +483,6 @@ function animate() {
             
             // Zum nächsten Level wechseln
             console.log("Anzahl der Level:", levels.length);
-  
-  
-            
             if (currentlevel == 0 ) {
               exitPlane.visible = true;
               setLevel(8)
@@ -603,9 +490,9 @@ function animate() {
             } else {
               currentlevel--;
               updateHudText(currentlevel);
+              level = random;
+              setLevel(level);
             }
-            level = random;
-            setLevel(level);
           } else {
             currentlevel = 5; 
             updateHudText(currentlevel);
@@ -619,7 +506,7 @@ function animate() {
         }
 
     }
-
+    //console.log(`Kamera Position: x=${cameraRig.position.x}, y=${cameraRig.position.y}, z=${cameraRig.position.z}`);
     renderer.render(scene, camera);
   });
 }
