@@ -4,35 +4,12 @@ import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader
 import { PointerLockControls } from "./node_modules/three/examples/jsm/controls/PointerLockControls.js";
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
-
-
-// Erzeuge ein <div>-Element
-const hud = document.createElement('div');
-
-// Style das <div> direkt per JavaScript (ähnlich wie in CSS)
-hud.style.position = 'fixed';
-hud.style.top = '10px';
-hud.style.left = '10px';
-hud.style.padding = '5px 10px';
-hud.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-hud.style.color = '#fff';
-hud.style.fontFamily = 'sans-serif';
-hud.style.zIndex = '9999';
-
-
-// Füge das <div> ins <body> ein
-document.body.appendChild(hud);
-
 let camera, scene, renderer;
-let controls;
+let hudCanvas, hudContext, hudTexture;
 let moveForward = false;
 let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
 let rotateLeft = false;
 let rotateRight = false;
-let velocity = new THREE.Vector3();
-let direction = new THREE.Vector3();
 let objects = [];
 let cameraCollider;
 let cameraBoundingBox;
@@ -40,26 +17,26 @@ let objectsBoundingBoxes = [];
 let level = 0; // Der Spieler beginnt bei Level 1
 let currentlevel = 5; // Der Spieler beginnt bei Level 5 Stockwerke hochgehen
 let cameraRig; // Dummy-Rig für die Kamera
-
+let notizPlane;
+let exitPlane;
 
 
 // Initialer Text
-hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
 const levels = [
   {
     name: "Level 1",
     cameraStartPosition: { x: -2.123642090273303, y: 1.4999999999999947, z: -94.61898176376722 },
-    target: "green" // Der Collider, zu dem der Spieler gehen muss
+    target: "red" // Der Collider, zu dem der Spieler gehen muss
   },
   {
     name: "Level 2",
     cameraStartPosition: { x: 47.29185384241402, y: 1.4999999999999947, z: -94.61898176376722 },
-    target: "red"
+    target: "green"
   },
   {
     name: "Level 3",
     cameraStartPosition: { x: 97.38687727522415, y: 1.4999999999999947, z: -94.61898176376722 },
-    target: "red"
+    target: "green"
   }
 ];
 
@@ -72,13 +49,13 @@ function init() {
   scene.background = new THREE.Color(0x87ceeb);
 
   cameraRig = new THREE.Group();
-camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-cameraRig.add(camera);
-scene.add(cameraRig);
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  cameraRig.add(camera);
+  scene.add(cameraRig);
 
-// Setze die Startposition für das Rig
-cameraRig.position.set(-2.123642090273303, 1.5, -94.61898176376722);
-cameraRig.rotation.set(0, Math.PI, 0);
+  // Setze die Startposition für das Rig
+  cameraRig.position.set(-2.123642090273303, 1.5, -94.61898176376722);
+  cameraRig.rotation.set(0, Math.PI, 0);
   camera.lookAt(0, 1.5, 0);
 
   renderer = new THREE.WebGLRenderer();
@@ -98,6 +75,87 @@ cameraRig.rotation.set(0, Math.PI, 0);
   directionalLight.castShadow = true;
   scene.add(directionalLight);
 
+  // *** Hier fügst du den Canvas-HUD-Code ein ***
+  // Erzeuge ein Canvas für das HUD
+  hudCanvas = document.createElement('canvas');
+  hudCanvas.width = 512; // z. B. 512x128
+  hudCanvas.height = 128;
+  hudContext = hudCanvas.getContext('2d');
+
+  // Start-Text zeichnen
+  hudContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  hudContext.fillRect(0, 0, hudCanvas.width, hudCanvas.height);
+  hudContext.fillStyle = '#fff';
+  hudContext.font = '30px sans-serif';
+  hudContext.fillText('Current Floor: ' + currentlevel, 20, 60);
+
+  // Erzeuge daraus eine Texture
+  hudTexture = new THREE.CanvasTexture(hudCanvas);
+  hudTexture.needsUpdate = true;
+
+  // Plane mit der Texture erstellen
+  const hudMaterial = new THREE.MeshBasicMaterial({
+    map: hudTexture,
+    transparent: true
+  });
+  const hudGeometry = new THREE.PlaneGeometry(1, 0.25); // Seitenverhältnis 4:1
+
+  const hudPlane = new THREE.Mesh(hudGeometry, hudMaterial);
+
+  // HUD vor der Kamera platzieren
+  hudPlane.position.set(0, 0, -2); // 2 Einheiten vor der Kamera
+  hudPlane.renderOrder = 999; // Sicherstellen, dass es vor anderen Objekten gerendert wird
+  cameraRig.add(hudPlane); // HUD zur Kamera-Gruppe hinzufügen
+
+  // TextureLoader für das Notiz-Bild
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load('GameNote.png', (texture) => {
+    // Plane-Geometrie und -Material
+    const geometry = new THREE.PlaneGeometry(1.5, 1.5); // z.B. 1x1 Meter
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true // nur falls du Alpha-Kanal benutzt
+    });
+
+    notizPlane = new THREE.Mesh(geometry, material);
+
+    // Vor der Kamera (cameraRig) platzieren
+    // z.B. direkt 1.5 Meter vor dem Spieler auf Augenhöhe
+    notizPlane.position.set(0, 1.5, -1.5);
+
+    // In einem VR-Spiel nutzt du oft ein cameraRig. 
+    // Also "hänge" die NotizPlane an das cameraRig statt an die scene:
+    cameraRig.add(notizPlane);
+
+    // Erst mal unsichtbar (oder sichtbar) setzen:
+    notizPlane.visible = true;
+  });
+
+    // TextureLoader für das Notiz-Bild
+    const textureLoader2 = new THREE.TextureLoader();
+    textureLoader2.load('exitNote.png', (texture) => {
+      // Plane-Geometrie und -Material
+      const geometry = new THREE.PlaneGeometry(1.5, 1.5); // z.B. 1x1 Meter
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true // nur falls du Alpha-Kanal benutzt
+      });
+  
+      exitPlane = new THREE.Mesh(geometry, material);
+  
+      // Vor der Kamera (cameraRig) platzieren
+      // z.B. direkt 1.5 Meter vor dem Spieler auf Augenhöhe
+      exitPlane.position.set(0, 1.5, -1.5);
+  
+      // In einem VR-Spiel nutzt du oft ein cameraRig. 
+      // Also "hänge" die NotizPlane an das cameraRig statt an die scene:
+      cameraRig.add(exitPlane);
+  
+      // Erst mal unsichtbar (oder sichtbar) setzen:
+      exitPlane.visible = false;
+    });
+    
+  
   // GLTF Loader zum Laden des GLB-Modells
   const loader = new GLTFLoader();
   loader.load(
@@ -134,7 +192,7 @@ collidableObjects.forEach((name) => {
 
   // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader2 = new GLTFLoader();
-  loader2.load("Leveel.glb", (gltf) => {
+  loader2.load("Finale.glb", (gltf) => {
     gltf.scene.position.set(50, 0, 0);
     scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
@@ -159,7 +217,7 @@ collidableObjects.forEach((name) => {
 
  // GLTF Loader zum Laden des dritte GLB-Modells
  const loader3 = new GLTFLoader();
- loader3.load("Leveel.glb", (gltf) => {
+ loader3.load("Finale.glb", (gltf) => {
    gltf.scene.position.set(100, 0, 0);
    scene.add(gltf.scene);
    gltf.scene.updateMatrixWorld(true);
@@ -183,23 +241,6 @@ collidableObjects.forEach((name) => {
  });
 
 
-  // PointerLockControls für die First-Person-Steuerung
-  /*controls = new PointerLockControls(camera, document.body);
-
-  document.addEventListener("click", function () {
-    controls.lock();
-  });
-
-  controls.addEventListener("lock", function () {
-    console.log("Pointer locked");
-  });
-
-  controls.addEventListener("unlock", function () {
-    console.log("Pointer unlocked");
-  });
-
-  scene.add(controls.getObject());*/
-
   // Kamera-Collider erstellen
   const cameraGeometry = new THREE.BoxGeometry(1, 1, 1);
   const cameraMaterial = new THREE.MeshBasicMaterial({ visible: false });
@@ -219,6 +260,9 @@ collidableObjects.forEach((name) => {
 // Event-Listener für Controller
 controller1.addEventListener("selectstart", () => {
   moveForward = true;
+  if (notizPlane && notizPlane.visible) {
+    notizPlane.visible = false;
+  }
 });
 controller1.addEventListener("selectend", () => {
   moveForward = false;
@@ -248,7 +292,7 @@ controller2.addEventListener("squeezeend", () => {
 
   // Kamera-BoundingBox initialisieren
   cameraBoundingBox = new THREE.Box3();
-
+/*
   // EventListener für Tastatursteuerung
   const onKeyDown = function (event) {
     switch (event.code) {
@@ -291,7 +335,7 @@ controller2.addEventListener("squeezeend", () => {
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
   window.addEventListener("resize", onWindowResize);
-
+*/
   setLevel(level);
 }
 
@@ -352,7 +396,6 @@ function animate() {
     }
     if (collision) {
       console.log(`Kollision erkannt mit: ${collidedObjectName}`);
-      hud.textContent = `Kollision mit: ${collidedObjectName}`;
 
       // Revert position
       cameraRig.position.copy(oldPosition);
@@ -363,7 +406,6 @@ function animate() {
     const random = Math.floor(Math.random() * 3);
     if (collision) {
       console.log(`Kollision erkannt mit: ${collidedObjectName}`);
-      hud.textContent = `Kollision mit: ${collidedObjectName}`;
       if(collidedObjectName === "green" || collidedObjectName === "red")
         {
           if (collidedObjectName === levels[level].target) {
@@ -377,16 +419,17 @@ function animate() {
   
             
             if (currentlevel == 0 ) {
+              exitPlane.visible = true;
               console.log("Herzlichen Glückwunsch! Du hast alle Levels abgeschlossen.");
             } else {
               currentlevel--;
-              hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
+              updateHudText(currentlevel);
             }
             level = random;
             setLevel(level);
           } else {
             currentlevel = 5; 
-            hud.textContent = 'Aktuelles Stockwerk: ' + currentlevel;
+            updateHudText(currentlevel);
             level = random;
             setLevel(level);
           }
@@ -421,5 +464,20 @@ function setLevel(levelIndex) {
   cameraRig.rotation.set(0, Math.PI, 0);
 
   console.log(`Starte ${level.name}, Ziel: ${level.target}`);
+}
+function updateHudText(newLevel) {
+  hudContext.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+  
+  // Hintergrund
+  hudContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  hudContext.fillRect(0, 0, hudCanvas.width, hudCanvas.height);
+  
+  // Text
+  hudContext.fillStyle = '#fff';
+  hudContext.font = '30px sans-serif';
+  hudContext.fillText(`Current Floor: ${newLevel}`, 20, 60);
+
+  // Texture refresh
+  hudTexture.needsUpdate = true;
 }
 
