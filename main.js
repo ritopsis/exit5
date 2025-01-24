@@ -14,20 +14,19 @@ let objects = [];
 let cameraCollider;
 let cameraBoundingBox;
 let objectsBoundingBoxes = [];
-let level = 0; // Der Spieler beginnt bei Level 1
-let currentlevel = 5; // Der Spieler beginnt bei Level 5 Stockwerke hochgehen
-let cameraRig; // Dummy-Rig für die Kamera
+let level = 0; 
+let currentlevel = 5; 
+let cameraRig; 
 let notizPlane;
 let exitPlane;
 const collidableObjects = ["green","red", "wall1", "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10", "plant1", "plant2", "plant3", "plant4", "plant6", "plant5"]; //
 
 
-// Initialer Text
 const levels = [
   {
     name: "Level 1",
     cameraStartPosition: { x: -2.123642090273303, y: 1.4999999999999947, z: -94.61898176376722 },
-    target: "red" // Der Collider, zu dem der Spieler gehen muss
+    target: "red"
   },
   {
     name: "Level 2",
@@ -76,7 +75,6 @@ animate();
 
 function init() {
   
-  // Szene, Kamera und Renderer initialisieren
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87ceeb);
 
@@ -85,7 +83,7 @@ function init() {
   cameraRig.add(camera);
   scene.add(cameraRig);
 
-  // Setze die Startposition für das Rig
+
   cameraRig.position.set(-2.123642090273303, 1.5, -94.61898176376722);
   cameraRig.rotation.set(0, Math.PI, 0);
   camera.lookAt(0, 1.5, 0);
@@ -97,7 +95,7 @@ function init() {
   document.body.appendChild(VRButton.createButton(renderer));
   renderer.xr.enabled = true
 
-  // Licht hinzufügen
+
   const light = new THREE.HemisphereLight(0xffffff, 0x444444);
   light.position.set(0, 200, 0);
   scene.add(light);
@@ -107,95 +105,78 @@ function init() {
   directionalLight.castShadow = true;
   scene.add(directionalLight);
 
-  // *** Hier fügst du den Canvas-HUD-Code ein ***
-  // Erzeuge ein Canvas für das HUD
+
   hudCanvas = document.createElement('canvas');
-  hudCanvas.width = 512; // z. B. 512x128
+  hudCanvas.width = 512; 
   hudCanvas.height = 128;
   hudContext = hudCanvas.getContext('2d');
 
-  // Start-Text zeichnen
+
   hudContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
   hudContext.fillRect(0, 0, hudCanvas.width, hudCanvas.height);
   hudContext.fillStyle = '#fff';
   hudContext.font = '30px sans-serif';
   hudContext.fillText('Current Floor: ' + currentlevel, 20, 60);
 
-  // Erzeuge daraus eine Texture
+
   hudTexture = new THREE.CanvasTexture(hudCanvas);
   hudTexture.needsUpdate = true;
 
-  // Plane mit der Texture erstellen
+
   const hudMaterial = new THREE.MeshBasicMaterial({
     map: hudTexture,
     transparent: true
   });
-  const hudGeometry = new THREE.PlaneGeometry(1, 0.25); // Seitenverhältnis 4:1
+  const hudGeometry = new THREE.PlaneGeometry(1, 0.25); 
 
   const hudPlane = new THREE.Mesh(hudGeometry, hudMaterial);
 
-  // HUD vor der Kamera platzieren
-  hudPlane.position.set(0, 0, -2); // 2 Einheiten vor der Kamera
-  hudPlane.renderOrder = 999; // Sicherstellen, dass es vor anderen Objekten gerendert wird
-  cameraRig.add(hudPlane); // HUD zur Kamera-Gruppe hinzufügen
+ 
+  hudPlane.position.set(0, 0, -2); 
+  hudPlane.renderOrder = 999; 
+  cameraRig.add(hudPlane); 
 
   // TextureLoader für das Notiz-Bild
   const textureLoader = new THREE.TextureLoader();
   textureLoader.load('GameNote.png', (texture) => {
-    // Plane-Geometrie und -Material
-    const geometry = new THREE.PlaneGeometry(1.5, 1.5); // z.B. 1x1 Meter
+    const geometry = new THREE.PlaneGeometry(1.5, 1.5); 
     const material = new THREE.MeshBasicMaterial({
       map: texture,
-      transparent: true // nur falls du Alpha-Kanal benutzt
+      transparent: true 
     });
 
     notizPlane = new THREE.Mesh(geometry, material);
 
-    // Vor der Kamera (cameraRig) platzieren
-    // z.B. direkt 1.5 Meter vor dem Spieler auf Augenhöhe
+
     notizPlane.position.set(0, 1.5, -1.5);
 
-    // In einem VR-Spiel nutzt du oft ein cameraRig. 
-    // Also "hänge" die NotizPlane an das cameraRig statt an die scene:
     cameraRig.add(notizPlane);
 
-    // Erst mal unsichtbar (oder sichtbar) setzen:
     notizPlane.visible = true;
   });
 
-    // TextureLoader für das Notiz-Bild
     const textureLoader2 = new THREE.TextureLoader();
     textureLoader2.load('exitNote.png', (texture) => {
-      // Plane-Geometrie und -Material
-      const geometry = new THREE.PlaneGeometry(1.5, 1.5); // z.B. 1x1 Meter
+      const geometry = new THREE.PlaneGeometry(1.5, 1.5); 
       const material = new THREE.MeshBasicMaterial({
         map: texture,
-        transparent: true // nur falls du Alpha-Kanal benutzt
+        transparent: true 
       });
   
       exitPlane = new THREE.Mesh(geometry, material);
-  
-      // Vor der Kamera (cameraRig) platzieren
-      // z.B. direkt 1.5 Meter vor dem Spieler auf Augenhöhe
+
       exitPlane.position.set(0, 1.5, -1.5);
   
-      // In einem VR-Spiel nutzt du oft ein cameraRig. 
-      // Also "hänge" die NotizPlane an das cameraRig statt an die scene:
       cameraRig.add(exitPlane);
-  
-      // Erst mal unsichtbar (oder sichtbar) setzen:
+
       exitPlane.visible = false;
     });
     
   const loader = new GLTFLoader();
-  loader.load(
-    "Level_1_comp.glb",
-    function (gltf) {
+  loader.load("Level_1_comp.glb", function (gltf) {
       gltf.scene.position.set(0, 0, 0);
       scene.add(gltf.scene);
       gltf.scene.updateMatrixWorld(true);
-      // Liste der gewünschten Objektnamen
-// Für jedes Objekt in der Liste einen Collider erstellen
 collidableObjects.forEach((name) => {
     const object = gltf.scene.getObjectByName(name);
     if (object) {
@@ -218,7 +199,6 @@ collidableObjects.forEach((name) => {
     }
   );
 
-  // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader2 = new GLTFLoader();
   loader2.load("Level_2_comp.glb", (gltf) => {
     gltf.scene.position.set(50, 0, 0);
@@ -236,7 +216,6 @@ collidableObjects.forEach((name) => {
     });
   });
 
-  // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader3 = new GLTFLoader();
   loader3.load("Level_3.glb", (gltf) => {
     gltf.scene.position.set(100, 0, 0);
@@ -254,7 +233,6 @@ collidableObjects.forEach((name) => {
     });
   });
 
-    // GLTF Loader zum Laden des zweiten GLB-Modells
     const loader4 = new GLTFLoader();
     loader4.load("Level_4.glb", (gltf) => {
       gltf.scene.position.set(150, 0, 0);
@@ -272,7 +250,6 @@ collidableObjects.forEach((name) => {
       });
     });
 
-      // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader5 = new GLTFLoader();
   loader5.load("Level_5.glb", (gltf) => {
     gltf.scene.position.set(200, 0, 0);
@@ -308,7 +285,6 @@ collidableObjects.forEach((name) => {
       });
     });
 
-      // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader7 = new GLTFLoader();
   loader7.load("Level_7.glb", (gltf) => {
     gltf.scene.position.set(300, 0, 0);
@@ -326,7 +302,6 @@ collidableObjects.forEach((name) => {
     });
   });
 
-    // GLTF Loader zum Laden des zweiten GLB-Modells
     const loader8 = new GLTFLoader();
     loader8.load("Level_8_comp.glb", (gltf) => {
       gltf.scene.position.set(350, 0, 0);
@@ -344,14 +319,12 @@ collidableObjects.forEach((name) => {
       });
     });
 
-      // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader9 = new GLTFLoader();
   loader9.load("Ende.glb", (gltf) => {
     gltf.scene.position.set(400, 0, 0);
     scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
   
-    // Liste aller gesuchten Objekt-Namen
     const collidableObjects2 = ["wall1", "wall2", "wall3","wall4"]; 
   
     collidableObjects2.forEach((name) => {
@@ -367,23 +340,20 @@ collidableObjects.forEach((name) => {
   });
 
 
-  // Kamera-Collider erstellen
   const cameraGeometry = new THREE.BoxGeometry(1, 1, 1);
   const cameraMaterial = new THREE.MeshBasicMaterial({ visible: false });
   cameraCollider = new THREE.Mesh(cameraGeometry, cameraMaterial);
   cameraCollider.position.copy(camera.position);
   scene.add(cameraCollider);
 
-  // Kamera-BoundingBox initialisieren
+
   cameraBoundingBox = new THREE.Box3();
 
-  // Kontroller einbinden
   const controller1 = renderer.xr.getController(0);
   const controller2 = renderer.xr.getController(1);
   scene.add(controller1);
   scene.add(controller2);
 
-// Event-Listener für Controller
 controller1.addEventListener("selectstart", () => {
   moveForward = true;
   if (notizPlane && notizPlane.visible) {
@@ -421,11 +391,9 @@ function animate() {
   renderer.setAnimationLoop(() => {
     const movementSpeed = 11;
     const rotationSpeed = 0.9;
-    const delta = clock.getDelta(); // Zeit seit letztem Frame in Sekunden
+    const delta = clock.getDelta(); 
 
-    // 1) Store the old position before applying movement
     const oldPosition = cameraRig.position.clone();
-    // Bewegung
     if (moveForward) {
       const forward = new THREE.Vector3(0, 0, -1);
       forward.applyQuaternion(cameraRig.quaternion);
@@ -437,7 +405,6 @@ function animate() {
       cameraRig.position.addScaledVector(backward, movementSpeed * delta);
     }
 
-    // Rotation
     if (rotateRight) {
       cameraRig.rotation.y -= rotationSpeed * delta;
     }
@@ -445,16 +412,13 @@ function animate() {
       cameraRig.rotation.y += rotationSpeed * delta;
     }
 
-    // Collider aktualisieren
     cameraCollider.position.copy(cameraRig.position);
     cameraBoundingBox.setFromObject(cameraCollider);
 
-    // BoundingBox-Objekte aktualisieren
     objects.forEach((object, index) => {
       objectsBoundingBoxes[index].setFromObject(object);
     });
 
-    // Kollisionsprüfung
     let collision = false;
     let collidedObjectName = null;
     for (let i = 0; i < objectsBoundingBoxes.length; i++) {
@@ -466,21 +430,15 @@ function animate() {
     }
     if (collision) {
       console.log(`Kollision erkannt mit: ${collidedObjectName}`);
-
-      // Revert position
       cameraRig.position.copy(oldPosition);
 
-      // Optionally, handle your level logic if the collided object is "green" or "red"
-      // ...
     }
-    // Zufallszahl zwischen 0 und 1
+
     const r = Math.random();
     let random = 0;
     if (r < 0.3) {
-      // 30 % Chance -> Level 0 (Startlevel)
       random = 0;
     } else {
-      // 70 % Chance -> Eines von 1 bis 7
       random = 1 + Math.floor(Math.random() * 7);
     }
     if (collision) {
@@ -492,11 +450,11 @@ function animate() {
     
             console.log(`Ziel erreicht:  ${collidedObjectName}`);
             
-            // Zum nächsten Level wechseln
             console.log("Anzahl der Level:", levels.length);
             if (currentlevel == 1 ) {
               exitPlane.visible = true;
               setLevel(8)
+              updateHudText(0);
               console.log("Herzlichen Glückwunsch! Du hast alle Levels abgeschlossen.");
             } else {
               currentlevel--;
@@ -515,9 +473,7 @@ function animate() {
         {
           console.log(collidedObjectName);
         }
-
     }
-    //console.log(`Kamera Position: x=${cameraRig.position.x}, y=${cameraRig.position.y}, z=${cameraRig.position.z}`);
     renderer.render(scene, camera);
   });
 }
@@ -532,7 +488,6 @@ function setLevel(levelIndex) {
     return;
   }
 
-  // KameraRig-Position aktualisieren
   cameraRig.position.set(
     level.cameraStartPosition.x,
     level.cameraStartPosition.y,
@@ -545,16 +500,13 @@ function setLevel(levelIndex) {
 function updateHudText(newLevel) {
   hudContext.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
   
-  // Hintergrund
   hudContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
   hudContext.fillRect(0, 0, hudCanvas.width, hudCanvas.height);
   
-  // Text
   hudContext.fillStyle = '#fff';
   hudContext.font = '30px sans-serif';
   hudContext.fillText(`Current Floor: ${newLevel}`, 20, 60);
 
-  // Texture refresh
   hudTexture.needsUpdate = true;
 }
 
