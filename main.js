@@ -483,7 +483,7 @@ function animate() {
             
             // Zum nächsten Level wechseln
             console.log("Anzahl der Level:", levels.length);
-            if (currentlevel == 0 ) {
+            if (currentlevel == 1 ) {
               exitPlane.visible = true;
               setLevel(8)
               console.log("Herzlichen Glückwunsch! Du hast alle Levels abgeschlossen.");
