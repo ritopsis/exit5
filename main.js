@@ -78,7 +78,7 @@ scene.add(cameraRig);
 
 // Setze die Startposition für das Rig
 cameraRig.position.set(-2.123642090273303, 1.5, -94.61898176376722);
-
+cameraRig.rotation.set(0, Math.PI, 0);
   camera.lookAt(0, 1.5, 0);
 
   renderer = new THREE.WebGLRenderer();
@@ -101,17 +101,19 @@ cameraRig.position.set(-2.123642090273303, 1.5, -94.61898176376722);
   // GLTF Loader zum Laden des GLB-Modells
   const loader = new GLTFLoader();
   loader.load(
-    "Corridorv2.glb",
+    "Finale.glb",
     function (gltf) {
       gltf.scene.position.set(0, 0, 0);
       scene.add(gltf.scene);
+      gltf.scene.updateMatrixWorld(true);
       // Liste der gewünschten Objektnamen
-const collidableObjects = ["green","red"]; //, "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10"];
+const collidableObjects = ["green","red", "wall1", "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10", "plant1", "plant2", "plant3", "plant4", "plant6", "plant5"]; //, "wall2", "elev1", "elev2", "elev3", "elev4", "elev5", "elev6","elev7","elev8","elev9","elev10"];
 
 // Für jedes Objekt in der Liste einen Collider erstellen
 collidableObjects.forEach((name) => {
     const object = gltf.scene.getObjectByName(name);
     if (object) {
+      object.updateMatrixWorld(true);
         // BoundingBox für das Objekt erstellen
         const boundingBox = new THREE.Box3().setFromObject(object);
         objectsBoundingBoxes.push(boundingBox);
@@ -132,13 +134,13 @@ collidableObjects.forEach((name) => {
 
   // GLTF Loader zum Laden des zweiten GLB-Modells
   const loader2 = new GLTFLoader();
-  loader2.load("Corridorv3.glb", (gltf) => {
+  loader2.load("Leveel.glb", (gltf) => {
     gltf.scene.position.set(50, 0, 0);
     scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
   
     // Liste aller gesuchten Objekt-Namen
-    const collidableObjects = ["red", "green"];
+    const collidableObjects = ["red", "green", "wall1"];
   
     collidableObjects.forEach((name) => {
       const object = gltf.scene.getObjectByName(name);
@@ -157,13 +159,13 @@ collidableObjects.forEach((name) => {
 
  // GLTF Loader zum Laden des dritte GLB-Modells
  const loader3 = new GLTFLoader();
- loader3.load("Corridorv3.glb", (gltf) => {
+ loader3.load("Leveel.glb", (gltf) => {
    gltf.scene.position.set(100, 0, 0);
    scene.add(gltf.scene);
    gltf.scene.updateMatrixWorld(true);
  
    // Liste aller gesuchten Objekt-Namen
-   const collidableObjects3 = ["red", "green"];
+   const collidableObjects3 = ["red", "green", "wall1"];
  
    collidableObjects3.forEach((name) => {
      const object = gltf.scene.getObjectByName(name);
@@ -182,7 +184,7 @@ collidableObjects.forEach((name) => {
 
 
   // PointerLockControls für die First-Person-Steuerung
-  /* controls = new PointerLockControls(camera, document.body);
+  /*controls = new PointerLockControls(camera, document.body);
 
   document.addEventListener("click", function () {
     controls.lock();
@@ -196,7 +198,7 @@ collidableObjects.forEach((name) => {
     console.log("Pointer unlocked");
   });
 
-  scene.add(controls.getObject()); */
+  scene.add(controls.getObject());*/
 
   // Kamera-Collider erstellen
   const cameraGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -204,6 +206,9 @@ collidableObjects.forEach((name) => {
   cameraCollider = new THREE.Mesh(cameraGeometry, cameraMaterial);
   cameraCollider.position.copy(camera.position);
   scene.add(cameraCollider);
+
+  // Kamera-BoundingBox initialisieren
+  cameraBoundingBox = new THREE.Box3();
 
   // Kontroller einbinden
   const controller1 = renderer.xr.getController(0);
@@ -301,9 +306,11 @@ function onWindowResize() {
 
 function animate() {
   renderer.setAnimationLoop(() => {
-    const movementSpeed = 0.1;
-    const rotationSpeed = 0.008;
+    const movementSpeed = 0.3;
+    const rotationSpeed = 0.02;
 
+    // 1) Store the old position before applying movement
+    const oldPosition = cameraRig.position.clone();
     // Bewegung
     if (moveForward) {
       const forward = new THREE.Vector3(0, 0, -1);
@@ -343,7 +350,16 @@ function animate() {
         break;
       }
     }
+    if (collision) {
+      console.log(`Kollision erkannt mit: ${collidedObjectName}`);
+      hud.textContent = `Kollision mit: ${collidedObjectName}`;
 
+      // Revert position
+      cameraRig.position.copy(oldPosition);
+
+      // Optionally, handle your level logic if the collided object is "green" or "red"
+      // ...
+    }
     const random = Math.floor(Math.random() * 3);
     if (collision) {
       console.log(`Kollision erkannt mit: ${collidedObjectName}`);
@@ -402,6 +418,7 @@ function setLevel(levelIndex) {
     level.cameraStartPosition.y,
     level.cameraStartPosition.z
   );
+  cameraRig.rotation.set(0, Math.PI, 0);
 
   console.log(`Starte ${level.name}, Ziel: ${level.target}`);
 }
