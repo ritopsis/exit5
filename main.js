@@ -3,6 +3,7 @@ import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
+const clock = new THREE.Clock();
 let camera, scene, renderer;
 let hudCanvas, hudContext, hudTexture;
 let moveForward = false;
@@ -418,8 +419,9 @@ controller2.addEventListener("squeezeend", () => {
 
 function animate() {
   renderer.setAnimationLoop(() => {
-    const movementSpeed = 0.3;
-    const rotationSpeed = 0.02;
+    const movementSpeed = 11;
+    const rotationSpeed = 0.9;
+    const delta = clock.getDelta(); // Zeit seit letztem Frame in Sekunden
 
     // 1) Store the old position before applying movement
     const oldPosition = cameraRig.position.clone();
@@ -427,20 +429,20 @@ function animate() {
     if (moveForward) {
       const forward = new THREE.Vector3(0, 0, -1);
       forward.applyQuaternion(cameraRig.quaternion);
-      cameraRig.position.addScaledVector(forward, movementSpeed);
+      cameraRig.position.addScaledVector(forward, movementSpeed * delta);
     }
     if (moveBackward) {
       const backward = new THREE.Vector3(0, 0, 1);
       backward.applyQuaternion(cameraRig.quaternion);
-      cameraRig.position.addScaledVector(backward, movementSpeed);
+      cameraRig.position.addScaledVector(backward, movementSpeed * delta);
     }
 
     // Rotation
     if (rotateRight) {
-      cameraRig.rotation.y -= rotationSpeed;
+      cameraRig.rotation.y -= rotationSpeed * delta;
     }
     if (rotateLeft) {
-      cameraRig.rotation.y += rotationSpeed;
+      cameraRig.rotation.y += rotationSpeed * delta;
     }
 
     // Collider aktualisieren
@@ -471,7 +473,16 @@ function animate() {
       // Optionally, handle your level logic if the collided object is "green" or "red"
       // ...
     }
-    const random = Math.floor(Math.random() * 8);
+    // Zufallszahl zwischen 0 und 1
+    const r = Math.random();
+    let random = 0;
+    if (r < 0.3) {
+      // 30 % Chance -> Level 0 (Startlevel)
+      random = 0;
+    } else {
+      // 70 % Chance -> Eines von 1 bis 7
+      random = 1 + Math.floor(Math.random() * 7);
+    }
     if (collision) {
       console.log(`Kollision erkannt mit: ${collidedObjectName}`);
       if(collidedObjectName === "green" || collidedObjectName === "red")
